@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authority Portal - Lord Buddha Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen p-6 font-sans text-slate-800">
+
+  <div class="max-w-4xl mx-auto">
+    <!-- Top Nav -->
+    <div class="flex justify-between items-center mb-8">
+      <a href="index.html" class="text-xs font-semibold text-blue-600 hover:underline">&larr; Back to Home</a>
+      <h1 class="font-bold text-slate-900">Authority DBA Dashboard</h1>
+    </div>
+
+    <!-- LOGIN BOX -->
+    <div id="loginBox" class="max-w-md mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+      <div class="space-y-1">
+        <h2 class="text-xl font-bold">Admin Login</h2>
+        <p class="text-xs text-slate-500">Enter your credentials to manage database records.</p>
+      </div>
+      <input id="adminEmail" type="email" placeholder="Admin Email" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+      <input id="adminPass" type="password" placeholder="Password" class="w-full p-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-600">
+      <button id="loginBtn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-semibold text-sm hover:bg-blue-700 transition">
+        Login as Authority
+      </button>
+      <p id="errorMsg" class="text-red-600 text-xs text-center"></p>
+    </div>
+
+    <!-- MAIN DASHBOARD (Hidden until logged in) -->
+    <div id="dashboard" class="hidden space-y-6">
+      <div class="flex justify-between items-center bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h2 class="font-bold text-slate-900">Control Center</h2>
+          <p class="text-xs text-slate-500">Manage user accounts and publish exam results.</p>
+        </div>
+        <button onclick="location.reload()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold transition">Logout</button>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Register User -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h3 class="font-bold text-sm text-slate-900 border-b pb-2">1. Register User (Teacher / Student)</h3>
+          <input id="newUserName" type="text" placeholder="Full Name" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm">
+          <input id="newUserEmail" type="email" placeholder="Email Address" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm">
+          <input id="newUserPass" type="password" placeholder="Password (min 6 chars)" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm">
+          <select id="newUserRole" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm bg-white">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+          </select>
+          <input id="newUserExtra" type="text" placeholder="Class (e.g. Grade 10) or Subject" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm">
+          <button id="createUserBtn" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-emerald-700 transition">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Exam Management -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h3 class="font-bold text-sm text-slate-900 border-b pb-2">2. Manage Exams</h3>
+          <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <input id="examTitle" type="text" placeholder="Exam Title (e.g. First Term)" class="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white">
+            <input id="examClass" type="text" placeholder="Class (e.g. Grade 10)" class="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white">
+            <button id="createExamBtn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold text-xs hover:bg-blue-700 transition">
+              Open Exam for Marks
+            </button>
+          </div>
+          <div id="examsList" class="space-y-2 max-h-40 overflow-y-auto">
+            <p class="text-xs text-slate-400">Loading exams...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // TODO: REPLACE WITH YOUR FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+    const secondaryAuth = getAuth(secondaryApp);
+
+    document.getElementById("loginBtn").onclick = async () => {
+      try {
+        const cred = await signInWithEmailAndPassword(auth, adminEmail.value, adminPass.value);
+        const snap = await getDoc(doc(db, "users", cred.user.uid));
+        if (snap.exists() && snap.data().role === "admin") {
+          loginBox.classList.add("hidden");
+          dashboard.classList.remove("hidden");
+          loadExams();
+        } else {
+          await signOut(auth);
+          errorMsg.innerText = "Access Denied: Not an Authority account.";
+        }
+      } catch (e) { errorMsg.innerText = e.message; }
+    };
+
+    document.getElementById("createUserBtn").onclick = async () => {
+      try {
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, newUserEmail.value, newUserPass.value);
+        await setDoc(doc(db, "users", cred.user.uid), {
+          uid: cred.user.uid, name: newUserName.value, email: newUserEmail.value, role: newUserRole.value, classOrSubject: newUserExtra.value
+        });
+        await signOut(secondaryAuth);
+        alert("Account created successfully!");
+        newUserName.value = ""; newUserEmail.value = ""; newUserPass.value = ""; newUserExtra.value = "";
+      } catch (e) { alert(e.message); }
+    };
+
+    document.getElementById("createExamBtn").onclick = async () => {
+      if (!examTitle.value || !examClass.value) return alert("Fill fields");
+      await addDoc(collection(db, "exams"), { title: examTitle.value, classId: examClass.value, status: "open_for_marks" });
+      examTitle.value = ""; examClass.value = "";
+      loadExams();
+    };
+
+    async function loadExams() {
+      examsList.innerHTML = "";
+      const snap = await getDocs(collection(db, "exams"));
+      snap.forEach((d) => {
+        const ex = d.data();
+        examsList.innerHTML += `
+          <div class="flex justify-between items-center p-2.5 border border-slate-200 rounded-xl bg-white text-xs">
+            <span><b>${ex.title}</b> (${ex.classId})</span>
+            ${ex.status === "open_for_marks" 
+              ? `<button onclick="publish('${d.id}')" class="bg-indigo-600 text-white px-2.5 py-1 rounded-lg font-semibold">Publish</button>` 
+              : `<span class="text-emerald-600 font-bold">Published</span>`}
+          </div>`;
+      });
+    }
+
+    window.publish = async (id) => {
+      await updateDoc(doc(db, "exams", id), { status: "published" });
+      loadExams();
+    };
+  </script>
+</body>
+</html>
