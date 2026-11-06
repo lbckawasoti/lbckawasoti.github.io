@@ -7,7 +7,29 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 min-h-screen p-6 font-sans text-slate-800">
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAVrndFRj-zLkXHQBPgEgvtp5TCZRCDgFg",
+    authDomain: "lordbuddhabase.firebaseapp.com",
+    projectId: "lordbuddhabase",
+    storageBucket: "lordbuddhabase.firebasestorage.app",
+    messagingSenderId: "1091836662057",
+    appId: "1:1091836662057:web:b1624fb414d902134ca738",
+    measurementId: "G-8LQRZXMEZM"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
   <div class="max-w-4xl mx-auto">
     <!-- Top Nav -->
     <div class="flex justify-between items-center mb-8">
