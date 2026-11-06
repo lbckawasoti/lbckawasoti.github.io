@@ -122,7 +122,7 @@
     document.getElementById("loginBtn").onclick = async () => {
       try {
         const cred = await signInWithEmailAndPassword(auth, adminEmail.value, adminPass.value);
-        const snap = await getDoc(doc(db, "users", cred.user.uid));
+        const snap = await getDoc(doc(db, "Users", cred.user.uid));
         if (snap.exists() && snap.data().role === "admin") {
           loginBox.classList.add("hidden");
           dashboard.classList.remove("hidden");
